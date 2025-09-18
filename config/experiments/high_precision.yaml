@@ -1,0 +1,46 @@
+# HRS-f High Precision Configuration
+# For detailed studies and benchmarking
+
+# Basic parameters
+frames: 10000
+dGamma: 1.0
+collection_u: 90.0
+collection_v: 90.0
+
+# Field parameters
+field_angle: 0.0
+refractive_index: 1.33
+wavelength: 800.0
+elliptic_field: false
+ellipticity: 0.0
+
+# Population parameters
+dipole_count: 24
+radius: 15.0
+geometry: ring
+geometry_file: ""
+
+# Physics flags - enable all contributions
+enable_eme: true
+enable_mee: true
+enable_qee: true
+
+# Output parameters
+output_prefix: high_precision
+output_dir: output/data/
+save_config: true
+save_metadata: true
+
+# Performance parameters
+num_threads: 0
+use_optimization: true
+
+# Validation parameters
+run_validation: true
+validation_target: rayleigh_single
+validation_tolerance: 1e-8
+
+# Uncertainty quantification
+enable_uq: true
+uq_samples: 5000
+

@@ -1,0 +1,46 @@
+# HRS-f Default Configuration
+# Basic simulation parameters
+
+# Basic parameters
+frames: 1000
+dGamma: 2.5
+collection_u: 90.0
+collection_v: 90.0
+
+# Field parameters
+field_angle: 0.0
+refractive_index: 1.33
+wavelength: 800.0
+elliptic_field: false
+ellipticity: 0.0
+
+# Population parameters
+dipole_count: 12
+radius: 10.0
+geometry: ring
+geometry_file: ""
+
+# Physics flags
+enable_eme: false
+enable_mee: false
+enable_qee: false
+
+# Output parameters
+output_prefix: default_simulation
+output_dir: output/data/
+save_config: true
+save_metadata: true
+
+# Performance parameters
+num_threads: 0
+use_optimization: true
+
+# Validation parameters
+run_validation: false
+validation_target: rayleigh_single
+validation_tolerance: 1e-6
+
+# Uncertainty quantification
+enable_uq: false
+uq_samples: 1000
+

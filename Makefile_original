@@ -1,0 +1,67 @@
+# HRS-f Project Makefile
+
+# Compiler and flags
+CXX = clang++
+CXXFLAGS = -std=gnu++14 -fcolor-diagnostics -fansi-escape-codes -g -Wall -Wextra
+INCLUDES = -I include
+
+# Directories
+SRCDIR = src
+BUILDDIR = build
+OBJDIR = $(BUILDDIR)/obj
+OUTPUTDIR = output
+
+# Source files
+SOURCES = $(wildcard $(SRCDIR)/*.cpp)
+OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+
+# Target executable
+TARGET = $(BUILDDIR)/HRS-f
+
+# Default target
+all: $(TARGET)
+
+# Create build directories
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+# Build the executable
+$(TARGET): $(OBJECTS) | $(BUILDDIR)
+	$(CXX) $(OBJECTS) -o $(TARGET)
+
+# Compile source files
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Create output directories
+$(OUTPUTDIR):
+	mkdir -p $(OUTPUTDIR)/data $(OUTPUTDIR)/configs $(OUTPUTDIR)/plots
+
+# Run the program
+run: $(TARGET) $(OUTPUTDIR)
+	./$(TARGET)
+
+# Clean build files
+clean:
+	rm -rf $(BUILDDIR)
+	rm -rf $(OUTPUTDIR)
+
+# Clean only object files
+clean-obj:
+	rm -rf $(OBJDIR)
+
+# Install (copy executable to system path if needed)
+install: $(TARGET)
+	cp $(TARGET) /usr/local/bin/
+
+# Help
+help:
+	@echo "Available targets:"
+	@echo "  all      - Build the project"
+	@echo "  run      - Build and run the program"
+	@echo "  clean    - Remove all build files and output"
+	@echo "  clean-obj- Remove only object files"
+	@echo "  install  - Install executable to system"
+	@echo "  help     - Show this help"
+
+.PHONY: all run clean clean-obj install help
