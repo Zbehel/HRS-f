@@ -100,7 +100,7 @@ For randomly oriented dipoles, the code performs Monte Carlo averaging over orie
 Where {Ω_i} represents the set of orientations for all dipoles in a given frame.
 
 #### Positional Averaging
-For systems with positional disorder, additional averaging over positions is performed.
+For systems with positional disorder, a structure can be defined and all dipoles from the same **Population** are reoriented coherently.
 
 ### 6. Detection and Polarization Analysis
 
@@ -121,9 +121,6 @@ The code computes angular-dependent intensities I(γ) where γ is the angle of t
 
 ### 1. Numerical Methods
 
-#### Complex Arithmetic
-All field calculations use complex arithmetic to handle phase relationships correctly.
-
 #### Vector Operations
 The code implements vectorized operations for:
 - Cross products: `VV_Cross_Product`
@@ -142,7 +139,6 @@ Tensor contractions are implemented in `TM_DotProduct` for hyperpolarizability c
 
 #### Parallelization
 OpenMP parallelization over:
-- Monte Carlo frames
 - Angular sampling points
 - Independent dipole calculations
 
