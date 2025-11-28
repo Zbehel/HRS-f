@@ -5,6 +5,8 @@
 #include <complex>
 #include <fstream>
 #include <chrono>
+#include <functional>
+#include <random>
 
 #ifndef CLASS_H_INCLUDED
 #define CLASS_H_INCLUDED
@@ -312,8 +314,27 @@ public:
         }
     }*/
 
+    // Custom copy constructor
+    Population(const Population& other)
+    : liste_(other.liste_), Orient_pop(other.Orient_pop), Syst_coord_(other.Syst_coord_)
+    {
+        // Do not copy conv_liste_ pointers to avoid double-free or sharing issues.
+        // conv_liste_ starts empty.
+    }
+
     void operator+=(Population P);
     Population& operator=(Population P);
+
+    ~Population()
+    {
+        // We do not own liste_ elements (shared), so we don't delete them.
+        // We own conv_liste_ elements, so we delete them.
+        for(unsigned int i=0;i<conv_liste_.size();i++)
+        {
+            delete conv_liste_[i];
+        }
+        conv_liste_.clear();
+    }
  };
 
 
@@ -375,6 +396,18 @@ class Setup
     //void AngularPattern
 
     void ecrire(vector<double> t1, vector<double> t2, vector<double> t3, string name) const;
+
+    // Refactored core simulation logic
+    template <typename PopT, typename FieldT>
+    void RunParallelSimulation(
+        PopT& Pop, 
+        FieldT& Ew, 
+        double dGamma, 
+        double start_angle, 
+        const string& path,
+        std::function<void(PopT&)> update_pop,
+        std::function<void(PopT&, FieldT&, std::vector<Electric_Field>&, int, double)> calc_field
+    );
 
     ~Setup(){}
  };

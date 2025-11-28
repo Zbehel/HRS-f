@@ -672,6 +672,12 @@ complex<double> T_Hyperpolarizabilite::Get_Element(double i,double j, double k)c
         vector<double> temoin2; temoin2.resize(3);
         ofstream fichier(file.c_str(), ios::out | ios::app);
         fichier<<2*liste_.size()<<endl<<"Disposition and Orientation"<<endl;
+        
+        if (conv_liste_.size() != liste_.size()) {
+            cout << "Warning: conv_liste_ size mismatch in SaveConfig. Skipping." << endl;
+            return;
+        }
+
         for(unsigned int i=0;i<liste_.size();i++)
         {
             if(liste_[i]->getNom() =="") fichier<<"Dip\t";
@@ -861,11 +867,7 @@ complex<double>const VV_Scal_Prod(vector<complex<double>> const& A, Position con
     return A[0]*B.x()+A[1]*B.y()+A[2]*B.z();
 }
 
-double enoise(double a, double b)
-{
-    //RETURN A RANDOM FLOATING NUMBER BETWEDN A & B
-    return ( rand()/(double)RAND_MAX ) * (b-a) + a;
-}
+
 
 
 
@@ -1181,134 +1183,215 @@ Population& Population::operator=(Population P)
         return (new Electric_Field(E2w));
     }
 
-    void Setup::PolarPattern(Electric_Field& Ew,Population& Pop,double dGamma,string path)
+// Thread-safe enoise implementation
+double enoise(double a, double b)
+{
+    static thread_local std::mt19937 generator(std::random_device{}());
+    std::uniform_real_distribution<double> distribution(a, b);
+    return distribution(generator);
+}
+
+
+// Template implementation for RunParallelSimulation
+template <typename PopT, typename FieldT>
+void Setup::RunParallelSimulation(
+    PopT& Pop, 
+    FieldT& Ew, 
+    double dGamma, 
+    double start_angle, 
+    const string& path,
+    std::function<void(PopT&)> update_pop,
+    std::function<void(PopT&, FieldT&, std::vector<Electric_Field>&, int, double)> calc_field
+) {
+    int nGamma = int(1 + (360. - start_angle) / dGamma);
+    SommeV.assign(nGamma, 0.0);
+    SommeH.assign(nGamma, 0.0);
+
+    // Precompute Gamma values
+    Gamma.resize(nGamma);
+    for(int i=0; i<nGamma; ++i) Gamma[i] = start_angle + i*dGamma;
+
+    int completed_frames = 0;
+
+    #pragma omp parallel
     {
-        SommeV.resize(int(1+360./dGamma));
-        SommeH.resize(int(1+360./dGamma));
+        // Thread-local copy of Population
+        PopT Pop_local = Pop;
+        
+        // Thread-local accumulation
+        vector<double> SommeV_local(nGamma, 0.0);
+        vector<double> SommeH_local(nGamma, 0.0);
+        
+        // Reusable Electric_Field objects
+        vector<Electric_Field> E2w_local(nGamma); 
 
-        vector<Electric_Field*> E2w;
-
+        #pragma omp for schedule(dynamic)
         for(unsigned int f=0; f<Frame_; f++)
         {
-            Pop.Randomize_Orientation();
-            //Pop.Randomize_Population(15);
-            //Pop.Move_Pop(enoise(-250.,250),enoise(-250.,250),enoise(-250.,250));
-            Pop.Place_Element_in_Lab_Frame();
+            // Update population (randomize, move, etc.)
+            update_pop(Pop_local);
 
-
-            //E2w.clear();
-            while(!E2w.empty())
+            for(int i = 0; i < nGamma; ++i)
             {
-                delete E2w.back();
-                E2w.pop_back();
+                double resol = Gamma[i];
+                
+                // Reset field
+                E2w_local[i] = Electric_Field();
+                
+                // Calculate field contribution
+                calc_field(Pop_local, Ew, E2w_local, i, resol);
+
+                SommeV_local[i] += norm(E2w_local[i].Comp()[0]);
+                SommeH_local[i] += norm((-E2w_local[i].Comp()[1]*cos(Ang_Col_u*M_PI/180.)) + (E2w_local[i].Comp()[2]*sin(Ang_Col_u*M_PI/180.)));
             }
-            for(double resol = 0.; resol<=360.; resol+=dGamma)
-            {
-
-                Ew.Rotate_Field(resol);
-
-                if(f==0)    Gamma.push_back(resol);
-                E2w.push_back(new Electric_Field());
-                if(Treat_eme()) *E2w[resol/dGamma] += Full_p_developement(Pop,Ew);//Contrib Dipolaire avec eee et eem
-                else *E2w[resol/dGamma] += Get_Field_Amplitude(Pop,Ew);//Contrib Dipolaire de base
-                /*On ajoute si valid� les contributions M et Q*/
-                if(Treat_MEE())*E2w[resol/dGamma] -= Get_M_Contribution(Pop,Ew);
-                if(Treat_QEE())*E2w[resol/dGamma] -= Get_RetardationContrib(Pop,Ew);
-
-                SommeV[int(resol/dGamma)] += norm(E2w[resol/dGamma]->Comp()[0]);
-                SommeH[int(resol/dGamma)] += norm((-E2w[resol/dGamma]->Comp()[1]*cos(Ang_Col_u*M_PI/180.)) + (E2w[resol/dGamma]->Comp()[2]*sin(Ang_Col_u*M_PI/180.)));
-            }
-            if(Check_save_config()) Pop.SaveConfig(path+"_Dip_Config.xyz");
-            cout<<"Avancement : "<<setprecision (3)<<setw(3)<<100.*(f+1)/Frame_<<"%\t\t\r";
-        }
-        ecrire(Gamma,SommeV,SommeH,path+"Main_Polar.txt");
-        Gamma.clear();
-        SommeH.clear();
-        SommeV.clear();
-    }
-
-    void Setup::PolarPattern(Eliptic_Electric_Field& Ew,Population& Pop,double dGamma,string path)
-    {
-        SommeV.resize(int(1+360./dGamma));
-        SommeH.resize(int(1+360./dGamma));
-
-        vector<Electric_Field*> E2w;
-
-        for(unsigned int f=0; f<Frame_; f++)
-        {
-            Pop.Randomize_Orientation();
-            //Pop.Randomize_Population(15);
-            Pop.Place_Element_in_Lab_Frame();
-
-            E2w.clear();
-            for(double resol = 45.; resol<=360.; resol+=dGamma)
-            {
-
-                Ew.Rotate_Field(0.,resol);
-                if(f==0)    Gamma.push_back(resol);
-                E2w.push_back(new Electric_Field());
-                if(Treat_eme()) *E2w[resol/dGamma] += Full_p_developement(Pop,Ew);//Contrib Dipolaire avec eee et eem
-                else *E2w[resol/dGamma] += Get_Field_Amplitude(Pop,Ew);//Contrib Dipolaire de base
-                /*On ajoute si valid� les contributions M et Q*/
-                if(Treat_MEE())*E2w[resol/dGamma] -= Get_M_Contribution(Pop,Ew);
-
-                SommeV[int(resol/dGamma)] += norm(E2w[resol/dGamma]->Comp()[0]);
-                SommeH[int(resol/dGamma)] += norm((-E2w[resol/dGamma]->Comp()[1]*cos(Ang_Col_u*M_PI/180.)) + (E2w[resol/dGamma]->Comp()[2]*sin(Ang_Col_u*M_PI/180.)));
-            }
-            if(Check_save_config()) Pop.SaveConfig(path+"_Dip_Config.xyz");
-            cout<<"Avancement : "<<setprecision (3)<<setw(3)<<100.*(f+1)/Frame_<<"%\t\t\r";
-        }
-        ecrire(Gamma,SommeV,SommeH,path+"Main_Polar.txt");
-        Gamma.clear();
-        SommeH.clear();
-        SommeV.clear();
-    }
-
-
-    void Setup::PolarPattern(Electric_Field& Ew,vector<Population> Pop,double dGamma,string path)
-    {
-        SommeV.resize(int(1+360./dGamma));
-        SommeH.resize(int(1+360./dGamma));
-
-        vector<Electric_Field*> E2w;
-
-        for(unsigned int f=0; f<Frame_; f++)
-        {
-            for(unsigned int cpt=0;cpt<Pop.size();cpt++)
-            {
-                //Pop[cpt].Randomize_Orientation();
-                Pop[cpt].Move_Pop(enoise(-250.,250),enoise(-250.,250),enoise(-250.,250));
-            //Pop.Randomize_Population(15);
-                Pop[cpt].Place_Element_in_Lab_Frame();
-            }
-
-            E2w.clear();
-            for(double resol = 0.; resol<=360.; resol+=dGamma)
-            {
-
-                Ew.Rotate_Field(resol);
-                if(f==0)    Gamma.push_back(resol);
-                E2w.push_back(new Electric_Field());
-                for(unsigned int cpt=0;cpt<Pop.size();cpt++)
+            
+            // Atomic progress update
+            int local_completed;
+            #pragma omp atomic capture
+            local_completed = ++completed_frames;
+            
+            if (local_completed % 100 == 0 || local_completed == Frame_) {
+                #pragma omp critical
                 {
-                    *E2w[resol/dGamma] += Get_Field_Amplitude(Pop[cpt],Ew);
+                    cout<<"Avancement : "<<setprecision (3)<<setw(3)<<100.*local_completed/Frame_<<"%\t\t\r"<<flush;
                 }
-
-                SommeV[int(resol/dGamma)] += norm(E2w[resol/dGamma]->Comp()[0]);
-                SommeH[int(resol/dGamma)] += norm((-E2w[resol/dGamma]->Comp()[1]*cos(Ang_Col_u*M_PI/180.)) + (E2w[resol/dGamma]->Comp()[2]*sin(Ang_Col_u*M_PI/180.)));
             }
-            if(Check_save_config()) Save_Config(Pop,path+"_Dip_Config.xyz");
-            cout<<"Avancement : "<<setprecision (3)<<setw(3)<<100.*(f+1)/Frame_<<"%\t\t\r";
         }
-        ecrire(Gamma,SommeV,SommeH,path+"_Main_Polar.txt");
-        Gamma.clear();
-        SommeH.clear();
-        SommeV.clear();
+        
+        // Accumulate results
+        #pragma omp critical
+        {
+            for(int i=0; i<nGamma; ++i) {
+                SommeV[i] += SommeV_local[i];
+                SommeH[i] += SommeH_local[i];
+            }
+        }
     }
+    
+}
+
+
+void Setup::PolarPattern(Electric_Field& Ew, Population& Pop, double dGamma, string path)
+{
+    RunParallelSimulation<Population, Electric_Field>(
+        Pop, Ew, dGamma, 0.0, path,
+        // Update Function
+        [](Population& p) {
+            p.Randomize_Orientation();
+            p.Place_Element_in_Lab_Frame();
+        },
+        // Calculate Function
+        [this](Population& p, Electric_Field& ew, vector<Electric_Field>& e2w, int idx, double angle) {
+            Electric_Field Ew_rot = ew;
+            Ew_rot.Rotate_Field(angle);
+
+            if(Treat_eme()) {
+                Electric_Field* ptr = Full_p_developement(p, Ew_rot);
+                e2w[idx] += *ptr;
+                delete ptr;
+            } else {
+                Electric_Field* ptr = Get_Field_Amplitude(p, Ew_rot);
+                e2w[idx] += *ptr;
+                delete ptr;
+            }
+            
+            if(Treat_MEE()) {
+                Electric_Field* ptr = Get_M_Contribution(p, Ew_rot);
+                e2w[idx] -= *ptr;
+                delete ptr;
+            }
+            if(Treat_QEE()) {
+                Electric_Field* ptr = Get_RetardationContrib(p, Ew_rot);
+                e2w[idx] -= *ptr;
+                delete ptr;
+            }
+        }
+    );
+    
+    if(Check_save_config()) Pop.SaveConfig(path+"_Dip_Config.xyz");
+    ecrire(Gamma,SommeV,SommeH,path+"Main_Polar.txt");
+    Gamma.clear();
+    SommeH.clear();
+    SommeV.clear();
+}
+
+void Setup::PolarPattern(Eliptic_Electric_Field& Ew, Population& Pop, double dGamma, string path)
+{
+    RunParallelSimulation<Population, Eliptic_Electric_Field>(
+        Pop, Ew, dGamma, 45.0, path,
+        // Update Function
+        [](Population& p) {
+            p.Randomize_Orientation();
+            p.Place_Element_in_Lab_Frame();
+        },
+        // Calculate Function
+        [this](Population& p, Eliptic_Electric_Field& ew, vector<Electric_Field>& e2w, int idx, double angle) {
+            Eliptic_Electric_Field Ew_rot = ew;
+            Ew_rot.Rotate_Field(0., angle);
+
+            if(Treat_eme()) {
+                Electric_Field* ptr = Full_p_developement(p, Ew_rot);
+                e2w[idx] += *ptr;
+                delete ptr;
+            } else {
+                Electric_Field* ptr = Get_Field_Amplitude(p, Ew_rot);
+                e2w[idx] += *ptr;
+                delete ptr;
+            }
+            
+            if(Treat_MEE()) {
+                Electric_Field* ptr = Get_M_Contribution(p, Ew_rot);
+                e2w[idx] -= *ptr;
+                delete ptr;
+            }
+        }
+    );
+    
+    if(Check_save_config()) Pop.SaveConfig(path+"_Dip_Config.xyz");
+    ecrire(Gamma,SommeV,SommeH,path+"Main_Polar.txt");
+    Gamma.clear();
+    SommeH.clear();
+    SommeV.clear();
+}
+
+void Setup::PolarPattern(Electric_Field& Ew, vector<Population> Pop, double dGamma, string path)
+{
+    RunParallelSimulation<vector<Population>, Electric_Field>(
+        Pop, Ew, dGamma, 0.0, path,
+        // Update Function
+        [](vector<Population>& pops) {
+            for(unsigned int cpt=0; cpt<pops.size(); cpt++) {
+                pops[cpt].Move_Pop(enoise(-250.,250), enoise(-250.,250), enoise(-250.,250));
+                pops[cpt].Place_Element_in_Lab_Frame();
+            }
+        },
+        // Calculate Function
+        [this](vector<Population>& pops, Electric_Field& ew, vector<Electric_Field>& e2w, int idx, double angle) {
+            Electric_Field Ew_rot = ew;
+            Ew_rot.Rotate_Field(angle);
+            
+            for(unsigned int cpt=0; cpt<pops.size(); cpt++) {
+                Electric_Field* ptr = Get_Field_Amplitude(pops[cpt], Ew_rot);
+                e2w[idx] += *ptr;
+                delete ptr;
+            }
+        }
+    );
+    
+    if(Check_save_config()) Save_Config(Pop, path+"_Dip_Config.xyz");
+    ecrire(Gamma,SommeV,SommeH,path+"_Main_Polar.txt");
+    Gamma.clear();
+    SommeH.clear();
+    SommeV.clear();
+}
 
     void Setup::ecrire(vector<double> t1, vector<double> t2, vector<double> t3, string name) const
     {
         ofstream fichier(name.c_str(), ios::out |ios::trunc);
+        if (!fichier.is_open()) {
+            cerr << "Error: Failed to open file " << name << endl;
+            return;
+        }
         fichier<<"PolAngle\tPolarV\tPolarH"<<endl;
         for(unsigned int i=0;i<t1.size();i++)
             fichier << t1[i]<<"\t"<< t2[i]<<"\t"<<t3[i] <<endl;

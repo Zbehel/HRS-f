@@ -1,0 +1,24 @@
+{
+  "simulation": {
+    "timestamp": "Nov 27 2025 22:45:43",
+    "duration_ms": 3377,
+    "threads": 16
+  },
+  "parameters": {
+    "frames": 5000,
+    "dGamma": 5,
+    "dipole_count": 12,
+    "radius": 10,
+    "geometry": "ring",
+    "wavelength": 800,
+    "refractive_index": 1.33,
+    "field_angle": 0,
+    "collection_u": 90,
+    "collection_v": 90
+  },
+  "physics": {
+    "enable_eme": false,
+    "enable_mee": false,
+    "enable_qee": false
+  }
+}

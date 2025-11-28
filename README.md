@@ -1,6 +1,7 @@
 # HRS-f Enhanced: PhD-Level Harmonic Rayleigh Scattering Simulation
 
-A professional-grade C++ framework for simulating harmonic electric field generation from dipole population
+A C++ framework for simulating harmonic electric field generation from dipole population
+For chiral particles, it is possible to add magnetic and quadrupolar contributions
 
 ## 🎯 Project Overview
 
@@ -27,10 +28,8 @@ HRS-f/
 │   └── catch2/            # Testing framework
 ├── validation/             # Analytical validation
 │   ├── analytical/        # Benchmark implementations
-│   └── reference_data/    # Reference datasets
 ├── config/                 # Configuration files
 │   ├── experiments/       # Experiment configurations
-│   └── sweeps/            # Parameter sweep definitions
 ├── build/                  # Build artifacts
 ├── output/                 # Simulation outputs
 │   ├── data/              # Data files
@@ -38,9 +37,7 @@ HRS-f/
 │   └── plots/             # Visualization outputs
 ├── docs/                   # Documentation
 │   ├── THEORY.md          # Theoretical foundation
-│   └── API.md             # API reference
-├── profiling/              # Performance analysis
-├── benchmarks/             # Benchmark results
+
 └── external/               # External dependencies
 ```
 
@@ -66,19 +63,6 @@ make run-precision
 
 # Run all tests
 make test-all
-```
-
-### Build Targets
-```bash
-make all           # Build enhanced version (default)
-make legacy        # Build original version
-make debug         # Debug build with symbols
-make release       # Optimized release build
-make test          # Run unit tests
-make validate      # Run validation tests
-make benchmark     # Performance benchmarks
-make docs          # Generate documentation
-make clean         # Clean build files
 ```
 
 ## 📊 Usage Examples
@@ -122,12 +106,6 @@ make clean         # Clean build files
 ```bash
 # Run performance benchmarks
 make benchmark
-
-# Profile with detailed analysis
-make profile
-
-# Memory leak checking
-make memcheck
 ```
 
 ## 🧪 Scientific Validation
@@ -137,15 +115,6 @@ make memcheck
 2. **Ring Symmetry**: Verifies rotational symmetry preservation
 3. **Conservation Laws**: Checks energy and momentum conservation
 4. **Multipole Contributions**: Validates EME/MEE/QEE implementations
-
-### Validation Reports
-```bash
-# Run comprehensive validation
-make validate
-
-# View validation report
-cat validation/validation_report.txt
-```
 
 ## 📚 Theoretical Foundation
 
@@ -171,20 +140,12 @@ See [`docs/THEORY.md`](docs/THEORY.md) for complete theoretical derivation.
 - **Chiral Plasmonics**: Helical nanostructure arrays
 - **Metamaterial Design**: Nonlinear optical metamaterials  
 - **Surface Science**: Interfacial nonlinear spectroscopy
-- **Quantum Optics**: Collective dipole interactions
 - **Materials Science**: Hyperpolarizability measurements
 
-### Publication-Ready Features
-- Rigorous error analysis and uncertainty quantification
-- Comprehensive validation against analytical theory
-- Performance benchmarking and scaling analysis
-- Complete methodology documentation
-- Reproducible computational protocols
 
 ## 📖 Documentation
 
 - [`docs/THEORY.md`](docs/THEORY.md) - Complete theoretical foundation
-- [`docs/API.md`](docs/API.md) - API reference and examples
 - [`config/experiments/`](config/experiments/) - Example configurations
 - [`validation/`](validation/) - Validation methodology
 
@@ -200,10 +161,9 @@ ________
 - **Performance Engineering**: Optimized algorithms, parallel computing
 - **Complete Documentation**: Theory, implementation, and usage guides
 
-**Research Level**: Graduate to PhD-level computational physics research
 
 ---
 
-*HRS-f Enhanced: Professional-grade simulation framework for nonlinear optical phenomena*
+*HRS-f Enhanced: simulation framework for nonlinear optical phenomena*
 
 

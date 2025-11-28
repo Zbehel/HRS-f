@@ -1,8 +1,8 @@
 {
   "simulation": {
-    "timestamp": "Sep  1 2025 16:47:38",
-    "duration_ms": 10230,
-    "threads": 1
+    "timestamp": "Nov 27 2025 22:45:43",
+    "duration_ms": 1319,
+    "threads": 16
   },
   "parameters": {
     "frames": 1000,

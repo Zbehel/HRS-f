@@ -8,8 +8,33 @@ CXXFLAGS_DEBUG = -std=gnu++14 -fcolor-diagnostics -fansi-escape-codes -g -Wall -
 CXXFLAGS_RELEASE = -std=gnu++14 -fcolor-diagnostics -fansi-escape-codes -O3 -DNDEBUG -march=native
 INCLUDES = -I include
 
-# Try to detect OpenMP support automatically
-OPENMP_FLAGS := $(shell echo | $(CXX) -fopenmp -E -dM - 2>/dev/null | grep -q _OPENMP && echo "-fopenmp -DHAS_OPENMP")
+# OpenMP Detection
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+
+ifeq ($(UNAME_S),Darwin)
+    # macOS detection
+    BREW_LIBOMP := $(shell brew --prefix libomp 2>/dev/null)
+    
+    ifneq ($(BREW_LIBOMP),)
+        OPENMP_FLAGS := -Xpreprocessor -fopenmp -I$(BREW_LIBOMP)/include -L$(BREW_LIBOMP)/lib -lomp -DHAS_OPENMP
+        
+        # Check for architecture mismatch (Intel brew on Apple Silicon)
+        ifeq ($(UNAME_M),arm64)
+            ifneq ($(findstring /usr/local,$(BREW_LIBOMP)),)
+                # Force x86_64 build to match library
+                CXXFLAGS += -arch x86_64
+                OPENMP_FLAGS += -arch x86_64
+            endif
+        endif
+    endif
+else
+    # Linux/Standard detection
+    OPENMP_FLAGS := $(shell echo | $(CXX) -fopenmp -E -dM - 2>/dev/null | grep -q _OPENMP && echo "-fopenmp -DHAS_OPENMP")
+endif
+
+# Add OpenMP flags to compiler flags
+CXXFLAGS += $(OPENMP_FLAGS)
 LIBS = $(OPENMP_FLAGS)
 
 # Directories
