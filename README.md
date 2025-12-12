@@ -1,4 +1,4 @@
-# HRS-f Enhanced: PhD-Level Harmonic Rayleigh Scattering Simulation
+# HRS-f : Harmonic Rayleigh Scattering Simulation
 
 A C++ framework for simulating harmonic electric field generation from dipole population
 For chiral particles, it is possible to add magnetic and quadrupolar contributions
