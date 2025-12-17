@@ -173,12 +173,6 @@ The code can model:
 - Oriented systems (aligned dipoles)
 - Disordered systems (random orientations)
 
-## References
-
-1. Boyd, R.W. "Nonlinear Optics" (Academic Press)
-2. Shen, Y.R. "The Principles of Nonlinear Optics" (Wiley)
-3. Butcher, P.N. & Cotter, D. "The Elements of Nonlinear Optics" (Cambridge)
-4. Jackson, J.D. "Classical Electrodynamics" (Wiley)
 
 ## Notation Summary
 

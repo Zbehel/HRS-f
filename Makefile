@@ -54,7 +54,7 @@ SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Exclude main files from library objects
-LIB_SOURCES = $(filter-out $(SRCDIR)/main.cpp $(SRCDIR)/main_enhanced.cpp, $(SOURCES))
+LIB_SOURCES = $(filter-out $(SRCDIR)/main.cpp $(SRCDIR)/main_examples.cpp, $(SOURCES))
 LIB_OBJECTS = $(LIB_SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Test sources
@@ -84,13 +84,13 @@ $(OBJDIR):
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
-# Build the enhanced executable
-$(TARGET_ENHANCED): $(LIB_OBJECTS) $(OBJDIR)/main_enhanced.o | $(BUILDDIR)
-	$(CXX) $(LIB_OBJECTS) $(OBJDIR)/main_enhanced.o $(LIBS) -o $(TARGET_ENHANCED)
+# Build the executable
+$(TARGET_ENHANCED): $(LIB_OBJECTS) $(OBJDIR)/main.o | $(BUILDDIR)
+	$(CXX) $(LIB_OBJECTS) $(OBJDIR)/main.o $(LIBS) -o $(TARGET_ENHANCED)
 
 # Build the legacy executable
-$(TARGET): $(LIB_OBJECTS) $(OBJDIR)/main.o | $(BUILDDIR)
-	$(CXX) $(LIB_OBJECTS) $(OBJDIR)/main.o $(LIBS) -o $(TARGET)
+$(TARGET): $(LIB_OBJECTS) $(OBJDIR)/main_examples.o | $(BUILDDIR)
+	$(CXX) $(LIB_OBJECTS) $(OBJDIR)/main_examples.o $(LIBS) -o $(TARGET)
 
 # Build test executable
 $(TARGET_TESTS): $(LIB_OBJECTS) $(TEST_OBJECTS) | $(BUILDDIR)

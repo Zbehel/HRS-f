@@ -145,7 +145,7 @@ See [`docs/THEORY.md`](docs/THEORY.md) for complete theoretical derivation.
 
 ## 📖 Documentation
 
-- [`docs/THEORY.md`](docs/THEORY.md) - Complete theoretical foundation
+- [`docs/THEORY.md`](docs/THEORY.md) - Quick theoretical foundation
 - [`config/experiments/`](config/experiments/) - Example configurations
 - [`validation/`](validation/) - Validation methodology
 
